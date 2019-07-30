@@ -13,7 +13,7 @@ font = cv2.FONT_HERSHEY_COMPLEX
 alt = False
 
 #impostare il nome del nodo coerente con quello del master
-id_node = "stop" #che ci va?
+id_node = "lane" # scrivi (aruco, lane, stop, joy)... le priorita sono in ordine crescente
 #impostare la risposta positiva coerente con quella del master
 positive_answ = 1
 
@@ -121,8 +121,8 @@ def frame_filter(imgMsg):
                         print("settando a 0 i motori")
                         cv2.putText(frame, "STOP",(x,y), font, 1, (0,0,255))
                         cv2.imshow("Frame",frame)
-                        twistmessage.linear.x=0.0
-                        twistmessage.linear.y=0.0
+                        twistmessage.linear.x=0
+                        twistmessage.linear.y=0
                         print(twistmessage)
                         followmessage.twist = twistmessage
                         pub.publish(followmessage)
@@ -137,13 +137,13 @@ def frame_filter(imgMsg):
 
 def shutdown():
     print("STOP")
-    rospy.signal_shutdown("Stop")
+    #rospy.signal_shutdown("Stop")
 
 def main_funcion():
     rospy.init_node('image_subscriber',anonymous=True)
-    #rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage, callback)
     rospy.Subscriber("lock_shared",Lock,checkMessage)
-    rospy.Subscriber("camera_image", CompressedImage, requestLock)
+    rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage, requestLock)
+    #rospy.Subscriber("camera_image", CompressedImage, requestLock)
 
     #Release on shutdown
 
