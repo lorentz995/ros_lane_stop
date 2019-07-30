@@ -2,28 +2,18 @@
 import rospy,sys,cv2,numpy,roslib
 from sensor_msgs.msg import CompressedImage
 from cv_bridge import CvBridge, CvBridgeError
-from geometry_msgs.msg import Twist
 from master_node.msg import *
 from master_node.srv import *
 import numpy as np
 import cv2
 import threading
 from geometry_msgs.msg import Twist
-from sensor_msgs.msg import Joy
-
-twistmessage = Twist()
-twistmessage.linear.x=0
-twistmessage.linear.y=0
-twistmessage.linear.z=0
-twistmessage.angular.x=0
-twistmessage.angular.y=0
-twistmessage.angular.z=0
 
 font = cv2.FONT_HERSHEY_COMPLEX
 alt = False
 
 #impostare il nome del nodo coerente con quello del master
-id_node = "joy" #che ci va?
+id_node = "stop" #che ci va?
 #impostare la risposta positiva coerente con quella del master
 positive_answ = 1
 
@@ -33,14 +23,14 @@ followmessage.id = id_node
 lock = False
 jump = False
 
-pub = rospy.Publisher('follow_topic', Follow, queue_size=1) # publish on ros_joy_controller topic
+pub = rospy.Publisher('follow_topic', Follow, queue_size=1) # publish on follow_topic
 request_lock_service = rospy.ServiceProxy('request_lock',RequestLockService)
 release_lock_service = rospy.ServiceProxy('release_lock',ReleaseLockService)
 
 def requestLock(data):
     global id_node, lock, jump
     if lock:
-        frame_filter(data) #qua va la tua funzione
+        frame_filter(data)
     elif jump:
         jump = False
     else:
@@ -48,7 +38,7 @@ def requestLock(data):
         print(resp)
         if resp:
             lock = True
-            frame_filter(data) #qua va la tua funzione
+            frame_filter(data)
         else:
             msg_shared = rospy.wait_for_message("/lock_shared", Lock)
             checkMessage(msg_shared)
@@ -104,18 +94,15 @@ def frame_filter(imgMsg):
     #for filter image
     kernel = np.ones((5,5), np.uint8)
     mask = cv2.erode(mask,kernel)
-    cv2.imshow("Mask",mask)
+    #cv2.imshow("Mask",mask) #uncomment for view the mask filtering
     cv2.waitKey(1)
     _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     maxArea = 0
     bestContour = None
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        #print(area)
         approx = cv2.approxPolyDP(cnt, 0.01*cv2.arcLength(cnt, True), True)
-        #x = approx.ravel()[0]
-        #y = approx.ravel()[1]
-        if area > maxArea: #Calcoliamo il rettangolo massimo
+        if area > maxArea: #Calculate max rectangular
             bestContour = approx
             maxArea = area
         cv2.drawContours(frame, [approx], 0, (0,0,255),1)
@@ -127,21 +114,21 @@ def frame_filter(imgMsg):
 
                 if y > 250:
                     try:
-                        print("settando a 0 i motori")
-                        '''cv2.putText(frame, "STOP",(x,y), font, 1, (0,0,255))
-                        cv2.imshow("Frame",frame)
-                        pub = rospy.Publisher('follow_topic', Twist, queue_size=10) 
-                        twistmessage.linear.x=0
-                        twistmessage.linear.y=0
-                        twistmessage.linear.z=0
-                        twistmessage.angular.x=0
-                        twistmessage.angular.y=0
-                        twistmessage.angular.z=0
-                        pub.publish(twistmessage)'''
                         if alt == False:
                             timer = threading.Timer(5.0, shutdown)
                             timer.start()
                             alt = True
+                        print("settando a 0 i motori")
+                        cv2.putText(frame, "STOP",(x,y), font, 1, (0,0,255))
+                        cv2.imshow("Frame",frame)
+                        twistmessage.linear.x=0.0
+                        twistmessage.linear.y=0.0
+                        print(twistmessage)
+                        followmessage.twist = twistmessage
+                        pub.publish(followmessage)
+                        stop_service = rospy.ServiceProxy('Stop',StopService)
+                        stop_service(1)
+
                     except:
                         pass
 
@@ -157,7 +144,9 @@ def main_funcion():
     #rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage, callback)
     rospy.Subscriber("lock_shared",Lock,checkMessage)
     rospy.Subscriber("camera_image", CompressedImage, requestLock)
-    #REALEASE SULLO SHUTDOWN
+
+    #Release on shutdown
+
     rospy.on_shutdown(releaseLock)
     rospy.spin()
 
