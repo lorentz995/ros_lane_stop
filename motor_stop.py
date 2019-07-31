@@ -73,5 +73,7 @@ def stop():
     timer.start()
 
 def arresto():
-    rospy.signal_shutdown("Stop")
-    print("SHUTTING DOWN")
+    global lock
+    if lock == True:
+        releaseLock()
+        lock = False

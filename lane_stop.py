@@ -6,65 +6,10 @@ from master_node.msg import *
 from master_node.srv import *
 import numpy as np
 import cv2
-import threading
-from geometry_msgs.msg import Twist
 import traceback
 from motor_stop import *
 
 font = cv2.FONT_HERSHEY_COMPLEX
-alt = False
-
-#impostare il nome del nodo coerente con quello del master
-id_node = "aruco" # scrivi (aruco, lane, stop, joy)... le priorita sono in ordine crescente
-#impostare la risposta positiva coerente con quella del master
-positive_answ = 1
-
-twistmessage = Twist()
-followmessage = Follow()
-followmessage.id = id_node
-lock = False
-jump = False
-
-pub = rospy.Publisher('follow_topic', Follow, queue_size=1) # publish on follow_topic
-request_lock_service = rospy.ServiceProxy('request_lock',RequestLockService)
-release_lock_service = rospy.ServiceProxy('release_lock',ReleaseLockService)
-stop_service = rospy.ServiceProxy('stop',StopService)
-
-def requestLock(data):
-    global id_node, lock, jump
-    if lock:
-        frame_filter(data)
-    elif jump:
-        jump = False
-    else:
-        resp = request_lock_service(id_node)
-        print(resp)
-        if resp:
-            lock = True
-            frame_filter(data)
-        else:
-            msg_shared = rospy.wait_for_message("/lock_shared", Lock)
-            checkMessage(msg_shared)
-
-def releaseLock():
-    global id_node, lock
-    resp = release_lock_service(id_node)
-    lock = False
-    print(resp)
-
-def checkMessage(data):
-    global id_node, lock
-    if data.id == id_node:
-        if data.msg == 1:
-            lock = True
-        else:
-            lock = False
-    else:
-        msg_shared = rospy.wait_for_message("/lock_shared", Lock)
-        checkMessage(msg_shared)
-
-
-
 
 def frame_filter(imgMsg):
     global alt, id_node
@@ -128,12 +73,9 @@ def frame_filter(imgMsg):
 
 def main_funcion():
     rospy.init_node('image_subscriber',anonymous=True)
-    rospy.Subscriber("lock_shared",Lock,checkMessage)
-    rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage, requestLock)
+    rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage, frame_filter)
     #rospy.Subscriber("/camera_image", CompressedImage, frame_filter)
-
     #Release on shutdown
-
     rospy.on_shutdown(releaseLock)
     rospy.spin()
 
