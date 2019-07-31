@@ -9,18 +9,18 @@ import cv2
 import threading
 from geometry_msgs.msg import Twist
 import traceback
-from std_msgs.msg import Int32
+from motor_stop import *
 
 font = cv2.FONT_HERSHEY_COMPLEX
 alt = False
 
 #impostare il nome del nodo coerente con quello del master
-id_node = "lane" # scrivi (aruco, lane, stop, joy)... le priorita sono in ordine crescente
+id_node = "aruco" # scrivi (aruco, lane, stop, joy)... le priorita sono in ordine crescente
 #impostare la risposta positiva coerente con quella del master
 positive_answ = 1
 
 twistmessage = Twist()
-followmessage = Follow() #?
+followmessage = Follow()
 followmessage.id = id_node
 lock = False
 jump = False
@@ -115,10 +115,8 @@ def frame_filter(imgMsg):
             if area > 4000:
                 cv2.putText(frame, "STOP DETECTION",(x,y), font, 1, (0,0,255))
                 if y > 250:
-                    
-
                     try:
-                        stop_wait()
+                        mainfunction2()
                     except Exception:
                         traceback.print_exc()
 
@@ -127,17 +125,15 @@ def frame_filter(imgMsg):
 
 
     cv2.imshow("Frame",frame)
-    print(id_node)
 
-def stop_wait():
-    print("settando a 0 i motori")
+    '''print("settando a 0 i motori")
     twistmessage.linear.x=0
     twistmessage.linear.y=0
     print(twistmessage)
     followmessage.twist = twistmessage
     pub.publish(followmessage)
 
-    stop_service(int(0))
+    stop_service(int(0))'''
 
     #rospy.signal_shutdown("Stop")
 
