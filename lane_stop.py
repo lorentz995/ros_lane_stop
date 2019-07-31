@@ -126,17 +126,6 @@ def frame_filter(imgMsg):
 
     cv2.imshow("Frame",frame)
 
-    '''print("settando a 0 i motori")
-    twistmessage.linear.x=0
-    twistmessage.linear.y=0
-    print(twistmessage)
-    followmessage.twist = twistmessage
-    pub.publish(followmessage)
-
-    stop_service(int(0))'''
-
-    #rospy.signal_shutdown("Stop")
-
 def main_funcion():
     rospy.init_node('image_subscriber',anonymous=True)
     rospy.Subscriber("lock_shared",Lock,checkMessage)
