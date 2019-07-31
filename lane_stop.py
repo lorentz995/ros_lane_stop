@@ -8,6 +8,8 @@ import numpy as np
 import cv2
 import threading
 from geometry_msgs.msg import Twist
+import traceback
+from std_msgs.msg import Int32
 
 font = cv2.FONT_HERSHEY_COMPLEX
 alt = False
@@ -26,6 +28,7 @@ jump = False
 pub = rospy.Publisher('follow_topic', Follow, queue_size=1) # publish on follow_topic
 request_lock_service = rospy.ServiceProxy('request_lock',RequestLockService)
 release_lock_service = rospy.ServiceProxy('release_lock',ReleaseLockService)
+stop_service = rospy.ServiceProxy('stop',StopService)
 
 def requestLock(data):
     global id_node, lock, jump
@@ -64,7 +67,7 @@ def checkMessage(data):
 
 
 def frame_filter(imgMsg):
-    global alt
+    global alt, id_node
     bridge = CvBridge()
     frame = bridge.compressed_imgmsg_to_cv2(imgMsg, "bgr8")
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -111,39 +114,38 @@ def frame_filter(imgMsg):
             cv2.rectangle(frame,(x,y),(x+z,y+t),(0,255,0),2)
             if area > 4000:
                 cv2.putText(frame, "STOP DETECTION",(x,y), font, 1, (0,0,255))
-
                 if y > 250:
-                    try:
-                        if alt == False:
-                            timer = threading.Timer(5.0, shutdown)
-                            timer.start()
-                            alt = True
-                        print("settando a 0 i motori")
-                        cv2.putText(frame, "STOP",(x,y), font, 1, (0,0,255))
-                        cv2.imshow("Frame",frame)
-                        twistmessage.linear.x=0
-                        twistmessage.linear.y=0
-                        print(twistmessage)
-                        followmessage.twist = twistmessage
-                        pub.publish(followmessage)
-                        stop_service = rospy.ServiceProxy('Stop',StopService)
-                        stop_service(1)
+                    
 
-                    except:
-                        pass
+                    try:
+                        stop_wait()
+                    except Exception:
+                        traceback.print_exc()
+
+
+
+
 
     cv2.imshow("Frame",frame)
+    print(id_node)
 
+def stop_wait():
+    print("settando a 0 i motori")
+    twistmessage.linear.x=0
+    twistmessage.linear.y=0
+    print(twistmessage)
+    followmessage.twist = twistmessage
+    pub.publish(followmessage)
 
-def shutdown():
-    print("STOP")
+    stop_service(int(0))
+
     #rospy.signal_shutdown("Stop")
 
 def main_funcion():
     rospy.init_node('image_subscriber',anonymous=True)
     rospy.Subscriber("lock_shared",Lock,checkMessage)
     rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage, requestLock)
-    #rospy.Subscriber("camera_image", CompressedImage, requestLock)
+    #rospy.Subscriber("/camera_image", CompressedImage, frame_filter)
 
     #Release on shutdown
 

@@ -33,7 +33,13 @@ lock = False
 
 pub = rospy.Publisher("follow_topic",Follow,queue_size=1)
 request_lock_service = rospy.ServiceProxy('request_lock', RequestLockService)
+release_lock_service = rospy.ServiceProxy('release_lock',ReleaseLockService)
 
+def releaseLock():
+    global id_node, lock
+    resp = release_lock_service(id_node)
+    lock = False
+    print(resp)
 
 def calculatePID(error,Kp,Ki,Kd):
 	global last_error, I
@@ -116,14 +122,16 @@ def lane_controller():
 
 	#Sottoscrizione al topic shared
 	rospy.Subscriber("lock_shared",Lock,checkMessage)
-
-
 	rospy.Subscriber('lane_detection', Int32, requestLock)
-	try:
-		rospy.spin()
-	except KeyboardInterrupt:
-		print("Shutting down")
+
+        try:
+            rospy.on_shutdown(releaseLock)
+            rospy.spin()
+
+        except KeyboardInterrupt:
+		    print("Shutting down")
 	#TODO RELEASE LOCK
+
 
 
 def requestLock(data):

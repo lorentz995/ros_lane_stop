@@ -53,21 +53,21 @@ def callback(data):
 	white_mask = cv2.erode(white_mask, None, iterations=2)
 	white_mask = cv2.dilate(white_mask, None, iterations=2)
 
-        lower_red = np.array([150,70,50])#150
-        upper_red = np.array([200,255,255])
+        #lower_red = np.array([150,70,50])#150
+        #upper_red = np.array([200,255,255])
 
-        lower_red2 = np.array([0,100,100])
-        upper_red2 = np.array([9,255,255])#10
+        #lower_red2 = np.array([0,100,100])
+        #upper_red2 = np.array([9,255,255])#10
 
-        red_mask1 = cv2.inRange(hsv,lower_red,upper_red)
-        red_mask1 = cv2.erode(red_mask1, None, iterations=2)
-        red_mask1 = cv2.dilate(red_mask1, None, iterations=2)
+        #red_mask1 = cv2.inRange(hsv,lower_red,upper_red)
+        #red_mask1 = cv2.erode(red_mask1, None, iterations=2)
+        #red_mask1 = cv2.dilate(red_mask1, None, iterations=2)
 
-        red_mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
-        red_mask2 = cv2.erode(red_mask2, None, iterations=2)
-        red_mask2 = cv2.dilate(red_mask2, None, iterations=2)
+        #red_mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+        #red_mask2 = cv2.erode(red_mask2, None, iterations=2)
+        #red_mask2 = cv2.dilate(red_mask2, None, iterations=2)
 
-        red_mask = cv2.bitwise_or(red_mask1,red_mask2)
+        #red_mask = cv2.bitwise_or(red_mask1,red_mask2)
 
 	lower_yellow = np.array([0,100,100]) #0,100,100
 	upper_yellow = np.array([40,255,255]) #30,255,255
@@ -79,7 +79,7 @@ def callback(data):
 	# mask AND original img
 	whitehsvthresh = cv2.bitwise_and(right_roi,right_roi,mask=white_mask)
 	yellowhsvthresh = cv2.bitwise_and(street,street,mask=yellow_mask)
-	redhsvthresh = cv2.bitwise_and(street,street,mask=red_mask1)
+	#redhsvthresh = cv2.bitwise_and(street,street,mask=red_mask1)
 
 	# Canny Edge Detection 
 	right_edges = cv2.Canny(whitehsvthresh,100,200)
@@ -88,13 +88,13 @@ def callback(data):
 	right_edges = cv2.bitwise_and(right_edges,right_roi_mask)
 	left_edges = cv2.bitwise_and(left_edges,left_roi_mask)
 
-	red_edges_hsv = cv2.Canny(redhsvthresh,100,200)
-	red_edges = cv2.bitwise_and(red_edges_hsv,stop_roi_mask)
+	#red_edges_hsv = cv2.Canny(redhsvthresh,100,200)
+	#red_edges = cv2.bitwise_and(red_edges_hsv,stop_roi_mask)
 	
 	# Standard Hough Transform
 	right_lines = cv2.HoughLines(right_edges,0.8,np.pi/180,35)
 	left_lines = cv2.HoughLines(left_edges,0.8,np.pi/180,30)
-	red_lines = cv2.HoughLines(red_edges,1,np.pi/180,40)
+	#red_lines = cv2.HoughLines(red_edges,1,np.pi/180,40)
 	
 	xm = cols/2
 	ym = rows
@@ -114,7 +114,7 @@ def callback(data):
 			i+1
                         pt1=(int(x0+1000*(-b)),int(y0+1000*(a)))
                         pt2=(int(x0-1000*(-b)),int(y0-1000*(a)))
-                        cv2.line(img,pt1,pt2,(255,0,0),2)
+                        cv2.line(img,pt1,pt2,(255,0,0),2) 
 
 
 	if len(x) != 0:
@@ -163,10 +163,10 @@ def callback(data):
 	time_count= (end_time - start_time) / cv2.getTickFrequency()
 #	rospy.loginfo(time_count)
 
-	if red_lines is not None:
+	'''if red_lines is not None:
 		rospy.loginfo("STOP")
-		message = 154 #stop
-	elif right_lines is not None and left_lines is not None:
+		message = 154 #stop'''
+	if right_lines is not None and left_lines is not None:
         	rospy.loginfo(error)
 		if error > 150:
 			error = 150
@@ -188,6 +188,7 @@ def callback(data):
 		message = 155 #no line found
 	else:
 		message = 155 #no line found
+
 
 	pub.publish(message)
 	image = bridge.cv2_to_compressed_imgmsg(img)
