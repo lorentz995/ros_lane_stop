@@ -2,79 +2,19 @@
 import rospy,sys,cv2,numpy,roslib
 from sensor_msgs.msg import CompressedImage
 from cv_bridge import CvBridge, CvBridgeError
-from geometry_msgs.msg import Twist
 from master_node.msg import *
 from master_node.srv import *
+from std_msgs.msg import Int32
 import numpy as np
 import cv2
-import threading
-from geometry_msgs.msg import Twist
-from sensor_msgs.msg import Joy
-
-twistmessage = Twist()
-twistmessage.linear.x=0
-twistmessage.linear.y=0
-twistmessage.linear.z=0
-twistmessage.angular.x=0
-twistmessage.angular.y=0
-twistmessage.angular.z=0
+import traceback
+from motor_stop import *
 
 font = cv2.FONT_HERSHEY_COMPLEX
-alt = False
-
-#impostare il nome del nodo coerente con quello del master
-id_node = "joy" #che ci va?
-#impostare la risposta positiva coerente con quella del master
-positive_answ = 1
-
-twistmessage = Twist()
-followmessage = Follow() #?
-followmessage.id = id_node
-lock = False
-jump = False
-
-pub = rospy.Publisher('follow_topic', Follow, queue_size=1) # publish on ros_joy_controller topic
-request_lock_service = rospy.ServiceProxy('request_lock',RequestLockService)
-release_lock_service = rospy.ServiceProxy('release_lock',ReleaseLockService)
-
-def requestLock(data):
-    global id_node, lock, jump
-    if lock:
-        frame_filter(data) #qua va la tua funzione
-    elif jump:
-        jump = False
-    else:
-        resp = request_lock_service(id_node)
-        print(resp)
-        if resp:
-            lock = True
-            frame_filter(data) #qua va la tua funzione
-        else:
-            msg_shared = rospy.wait_for_message("/lock_shared", Lock)
-            checkMessage(msg_shared)
-
-def releaseLock():
-    global id_node, lock
-    resp = release_lock_service(id_node)
-    lock = False
-    print(resp)
-
-def checkMessage(data):
-    global id_node, lock
-    if data.id == id_node:
-        if data.msg == 1:
-            lock = True
-        else:
-            lock = False
-    else:
-        msg_shared = rospy.wait_for_message("/lock_shared", Lock)
-        checkMessage(msg_shared)
-
-
-
+pub = rospy.Publisher('lane_detection', Int32, queue_size=10)
 
 def frame_filter(imgMsg):
-    global alt
+    global alt, id_node
     bridge = CvBridge()
     frame = bridge.compressed_imgmsg_to_cv2(imgMsg, "bgr8")
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -104,60 +44,37 @@ def frame_filter(imgMsg):
     #for filter image
     kernel = np.ones((5,5), np.uint8)
     mask = cv2.erode(mask,kernel)
-    cv2.imshow("Mask",mask)
+    #cv2.imshow("Mask",mask) #uncomment for view the mask filtering
     cv2.waitKey(1)
     _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     maxArea = 0
     bestContour = None
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        #print(area)
         approx = cv2.approxPolyDP(cnt, 0.01*cv2.arcLength(cnt, True), True)
-        #x = approx.ravel()[0]
-        #y = approx.ravel()[1]
-        if area > maxArea: #Calcoliamo il rettangolo massimo
+        if area > maxArea: #Calculate max rectangular
             bestContour = approx
             maxArea = area
         cv2.drawContours(frame, [approx], 0, (0,0,255),1)
         if bestContour is not None:
             x,y,z,t = cv2.boundingRect(bestContour)
             cv2.rectangle(frame,(x,y),(x+z,y+t),(0,255,0),2)
-            if area > 4000:
-                cv2.putText(frame, "STOP DETECTION",(x,y), font, 1, (0,0,255))
-
-                if y > 250:
-                    try:
-                        print("settando a 0 i motori")
-                        '''cv2.putText(frame, "STOP",(x,y), font, 1, (0,0,255))
-                        cv2.imshow("Frame",frame)
-                        pub = rospy.Publisher('follow_topic', Twist, queue_size=10) 
-                        twistmessage.linear.x=0
-                        twistmessage.linear.y=0
-                        twistmessage.linear.z=0
-                        twistmessage.angular.x=0
-                        twistmessage.angular.y=0
-                        twistmessage.angular.z=0
-                        pub.publish(twistmessage)'''
-                        if alt == False:
-                            timer = threading.Timer(5.0, shutdown)
-                            timer.start()
-                            alt = True
-                    except:
-                        pass
+            if y > 150:
+                if area > 4000:
+                    cv2.putText(frame, "STOP DETECTION",(x,y), font, 1, (0,0,255))
+                    if y > 240:
+                        try:
+                            requestLock() #segnale di stop
+                        except Exception:
+                            traceback.print_exc()
 
     cv2.imshow("Frame",frame)
 
-
-def shutdown():
-    print("STOP")
-    rospy.signal_shutdown("Stop")
-
 def main_funcion():
     rospy.init_node('image_subscriber',anonymous=True)
-    #rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage, callback)
-    rospy.Subscriber("lock_shared",Lock,checkMessage)
-    rospy.Subscriber("camera_image", CompressedImage, requestLock)
-    #REALEASE SULLO SHUTDOWN
+    rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage, frame_filter)
+    #rospy.Subscriber("/camera_image", CompressedImage, frame_filter)
+    #Release on shutdown
     rospy.on_shutdown(releaseLock)
     rospy.spin()
 

@@ -1,0 +1,42 @@
+***FILE lane_detection***
+Put this code bitween
+line 54: white_mask = cv2.dilate(white_mask, None, iterations=2)
+line 56: lower_yellow = np.array([0,100,100]) #0,100,100
+
+
+#lower_red = np.array([150,70,50])#150
+#upper_red = np.array([200,255,255])
+
+#lower_red2 = np.array([0,100,100])
+#upper_red2 = np.array([9,255,255])#10
+
+#red_mask1 = cv2.inRange(hsv,lower_red,upper_red)
+ #red_mask1 = cv2.erode(red_mask1, None, iterations=2)
+#red_mask1 = cv2.dilate(red_mask1, None, iterations=2)
+
+#red_mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+#red_mask2 = cv2.erode(red_mask2, None, iterations=2)
+#red_mask2 = cv2.dilate(red_mask2, None, iterations=2)
+
+#red_mask = cv2.bitwise_or(red_mask1,red_mask2)
+
+Put this under line 65:
+
+#redhsvthresh = cv2.bitwise_and(street,street,mask=red_mask1)
+
+Under line 72:
+
+#red_edges_hsv = cv2.Canny(redhsvthresh,100,200)
+#red_edges = cv2.bitwise_and(red_edges_hsv,stop_roi_mask)
+
+Under line 76
+#red_lines = cv2.HoughLines(red_edges,1,np.pi/180,40)
+
+Under line 142:
+
+	'''if red_lines is not None:
+		rospy.loginfo("STOP")
+		message = 154 #stop'''
+
+***FILE lane_controller_linear***
+
