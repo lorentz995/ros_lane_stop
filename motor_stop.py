@@ -6,6 +6,8 @@ from master_node.msg import *
 from master_node.srv import *
 import threading
 
+conta_stop = 0
+one_time = False
 id_node = "stop"
 positive_answ = 1
 
@@ -54,26 +56,30 @@ def checkMessage(data):
         msg_shared = rospy.wait_for_message("/lock_shared", Lock)
         checkMessage(msg_shared)
 
-
-
-
-
-def mainfunction2():
-    requestLock()
-
 def stop():
-    print("settando a 0 i motori")
-    twistmessage.linear.x=0
-    twistmessage.linear.y=0
-    print(twistmessage)
-    followmessage.twist = twistmessage
-    pub.publish(followmessage)
-    stop_service(int(0))
-    timer = threading.Timer(5.0, arresto)
-    timer.start()
+    global conta_stop, one_time
+    conta_stop += 1
+    if conta_stop < 7:
+        print("STOP")
+        twistmessage.linear.x=0
+        twistmessage.linear.y=0
+        print(twistmessage)
+        followmessage.twist = twistmessage
+        pub.publish(followmessage)
+        stop_service(int(0))
+        if one_time == False:
+            rel = threading.Timer(5.0, releaseLock)
+            rel.start()
+            res = threading.Timer(5.0, reset)
+            res.start()
+            #pedrito = threading.Timer(5.0, Pedro)
+            #pedrito.start()
+            one_time = True
 
-def arresto():
-    global lock
-    if lock == True:
-        releaseLock()
-        lock = False
+    else:
+        print("dovresti mandare il robot avanti di un pochino")
+
+def reset():
+    global conta_stop, one_time
+    conta_stop = 0
+    one_time = False

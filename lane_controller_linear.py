@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+
+# *** Lane_controller_linear
+
 from __future__ import print_function
 import rospy, sys, cv2, time
 import numpy as np
@@ -7,12 +10,11 @@ from std_msgs.msg import Int32
 from master_node.msg import *
 from master_node.srv import *
 
-#impostare il nome del nodo coerente con quello del master
+#set id node for master node priority
 id_node = "lane"
 
-#impostare la risposta positiva
+#set positive answer
 positive_answ = 1
-
 
 I = 0
 last_error = 0
@@ -30,16 +32,9 @@ followmessage.id = id_node
 
 lock = False
 
-
 pub = rospy.Publisher("follow_topic",Follow,queue_size=1)
 request_lock_service = rospy.ServiceProxy('request_lock', RequestLockService)
 release_lock_service = rospy.ServiceProxy('release_lock',ReleaseLockService)
-
-def releaseLock():
-    global id_node, lock
-    resp = release_lock_service(id_node)
-    lock = False
-    print(resp)
 
 def calculatePID(error,Kp,Ki,Kd):
 	global last_error, I
@@ -69,7 +64,6 @@ def calculatePID(error,Kp,Ki,Kd):
 	return PID
 
 def turnOffMotors():
-	# DEBUG VERSION TO FIX
 	twistMessage.linear.x = 0
 	twistMessage.linear.y = 0
 	followmessage.twist = twistMessage
@@ -87,8 +81,8 @@ def setSpeed(speed1,speed2):
 def callback(data):
 
 	error = data.data
-	speed2 = 80
-	motorBalance = 10 
+	speed2 = 70
+	motorBalance = 8
 	speed1 = speed2 + motorBalance
 
 #	PID = calculatePID(error,0.5,0.0005,0.005)
@@ -105,34 +99,20 @@ def callback(data):
 		setSpeed(speed1,speed2-PID)
 
 	elif error == 152:
-#		setSpeed(speed1,60)
-		setSpeed(speed1,70)
+		setSpeed(speed1,60)
 
 	elif error == 153:
-#		setSpeed(60,speed2)
-		setSpeed(70,speed2)
-
+		setSpeed(60,speed2)
 	else:
-		if error == 154:
-			time.sleep(0.5)
+		'''if error == 154:
+			time.sleep(0.5)'''
 		turnOffMotors()
 
-def lane_controller():
-	rospy.init_node('lane_controller', anonymous=True)
-
-	#Sottoscrizione al topic shared
-	rospy.Subscriber("lock_shared",Lock,checkMessage)
-	rospy.Subscriber('lane_detection', Int32, requestLock)
-
-        try:
-            rospy.on_shutdown(releaseLock)
-            rospy.spin()
-
-        except KeyboardInterrupt:
-		    print("Shutting down")
-	#TODO RELEASE LOCK
-
-
+def releaseLock():
+    global id_node, lock
+    resp = release_lock_service(id_node)
+    lock = False
+    print(resp)
 
 def requestLock(data):
 	global id_node, lock
@@ -142,14 +122,12 @@ def requestLock(data):
 		resp = request_lock_service(id_node)
 		print(resp.ack)
 		if resp.ack:
-			print("dentro if")
 			lock = True
 			callback(data)
 		else:
-			print("fuori if")
-			rospy.loginfo("ACK FALSO ASPETTO")
+			rospy.loginfo("False ACK: Waiting")
 			msg_shared = rospy.wait_for_message("/lock_shared",Lock)
-			rospy.loginfo("MESSAGGIO ARRIVATO PROCEDO")
+			rospy.loginfo("Received message: GO")
 			checkMessage(msg_shared)
 
 def checkMessage(data):
@@ -163,6 +141,17 @@ def checkMessage(data):
 		msg_shared = rospy.wait_for_message("/lock_shared", Lock)
 		checkMessage(msg_shared)
 
+def lane_controller():
+	rospy.init_node('lane_controller', anonymous=True)
+	rospy.Subscriber("lock_shared",Lock,checkMessage) #Subscribe
+	rospy.Subscriber('lane_detection', Int32, requestLock)
+
+        try:
+            rospy.on_shutdown(releaseLock)
+            rospy.spin()
+
+        except KeyboardInterrupt:
+		    print("Shutting down")
 
 if __name__ == '__main__':
 	lane_controller()

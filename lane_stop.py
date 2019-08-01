@@ -57,17 +57,14 @@ def frame_filter(imgMsg):
         if bestContour is not None:
             x,y,z,t = cv2.boundingRect(bestContour)
             cv2.rectangle(frame,(x,y),(x+z,y+t),(0,255,0),2)
-            if area > 4000:
-                cv2.putText(frame, "STOP DETECTION",(x,y), font, 1, (0,0,255))
-                if y > 250:
-                    try:
-                        mainfunction2()
-                    except Exception:
-                        traceback.print_exc()
-
-
-
-
+            if y > 150:
+                if area > 4000:
+                    cv2.putText(frame, "STOP DETECTION",(x,y), font, 1, (0,0,255))
+                    if y > 250:
+                        try:
+                            requestLock()
+                        except Exception:
+                            traceback.print_exc()
 
     cv2.imshow("Frame",frame)
 
