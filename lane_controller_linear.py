@@ -104,8 +104,8 @@ def callback(data):
 	elif error == 153:
 		setSpeed(60,speed2)
 	else:
-		'''if error == 154:
-			time.sleep(0.5)'''
+		if error == 154:
+			turnOffMotors()
 		turnOffMotors()
 
 def releaseLock():

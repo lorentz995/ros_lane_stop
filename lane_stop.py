@@ -4,12 +4,14 @@ from sensor_msgs.msg import CompressedImage
 from cv_bridge import CvBridge, CvBridgeError
 from master_node.msg import *
 from master_node.srv import *
+from std_msgs.msg import Int32
 import numpy as np
 import cv2
 import traceback
 from motor_stop import *
 
 font = cv2.FONT_HERSHEY_COMPLEX
+pub = rospy.Publisher('lane_detection', Int32, queue_size=10)
 
 def frame_filter(imgMsg):
     global alt, id_node
@@ -60,9 +62,9 @@ def frame_filter(imgMsg):
             if y > 150:
                 if area > 4000:
                     cv2.putText(frame, "STOP DETECTION",(x,y), font, 1, (0,0,255))
-                    if y > 250:
+                    if y > 240:
                         try:
-                            requestLock()
+                            requestLock() #segnale di stop
                         except Exception:
                             traceback.print_exc()
 

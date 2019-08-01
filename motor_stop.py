@@ -59,7 +59,7 @@ def checkMessage(data):
 def stop():
     global conta_stop, one_time
     conta_stop += 1
-    if conta_stop < 7:
+    if conta_stop < 40:
         print("STOP")
         twistmessage.linear.x=0
         twistmessage.linear.y=0
@@ -77,7 +77,15 @@ def stop():
             one_time = True
 
     else:
-        print("dovresti mandare il robot avanti di un pochino")
+        twistmessage.linear.x=80
+        twistmessage.linear.y=80
+        followmessage.twist = twistmessage
+        pub.publish(followmessage)
+        '''twistmessage.linear.x=0
+        twistmessage.linear.y=0
+        followmessage.twist = twistmessage
+        pub.publish(followmessage)'''
+
 
 def reset():
     global conta_stop, one_time
