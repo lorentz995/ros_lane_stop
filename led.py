@@ -10,6 +10,7 @@ from random import randint
 from crossing import *
 from master_node.msg import *
 from master_node.srv import *
+from motor_stop import *
 
 contatore1 = 0
 contatore2 = 0
@@ -17,7 +18,7 @@ contatore3 = 0
 contatore4 = 0
 stop = False
 
-id_node = "stop"
+'''id_node = "stop"
 positive_answ = 1
 
 twistmessage = Twist()
@@ -63,6 +64,7 @@ def checkMessage(data):
     else:
         msg_shared = rospy.wait_for_message("/lock_shared", Lock)
         checkMessage(msg_shared)
+        '''
 
 
 def callback(imgMsg):
@@ -146,8 +148,8 @@ def filtra(frame):
     attraversamento(destra, anteriore, led_a)
 
 
-    cv2.imshow('led', mask)
-    cv2.imshow('marker blu', mask1)
+    #cv2.imshow('led', mask)
+    #cv2.imshow('marker blu', mask1)
     cv2.imshow('frame', frame)
 
     cv2.waitKey(1)
@@ -174,7 +176,7 @@ def attraversamento(d, a, l_a):
             if contatore2 >= 70:
                 dir = randint(0,2)
                 if dir == 0:
-                    requestLock('right')
+                    requestCross('right')
                     print('dx occupata e anteriore occupato con led spento, giro a dx')
                     stop = True
                 else:
@@ -189,17 +191,17 @@ def attraversamento(d, a, l_a):
             if contatore3 >= 70:
                 dir = randint(0,2)
                 if dir == 0:
-                    requestLock('right')
+                    requestCross('right')
                     print('anteriore occupato e led spento, giro a destra')
                     stop = True
 
                 if dir == 1:
-                    requestLock('center')
+                    requestCross('center')
                     print('anteriore occupato e led spento, vado dritto')
                     stop = True
 
                 if dir == 2:
-                    requestLock('left')
+                    requestCross('left')
                     print('anteriore occupato e led spento, giro a sx')
                     stop = True
 
@@ -212,28 +214,27 @@ def attraversamento(d, a, l_a):
                 dir = randint(0,2)
 
                 if dir == 0:
-                    requestLock('right')
+                    requestCross('right')
                     print('incrocio libero, giro a dx')
                     stop = True
 
                 if dir == 1:
-                    requestLock('center')
+                    requestCross('center')
                     print('incrocio libero, vado dritto')
                     stop = True
 
                 if dir == 2:
-                    requestLock('left')
+                    requestCross('left')
                     print('incrocio libero, vado a sx')
                     stop = True
 
 
 def video_filter():
-    #rospy.init_node('image_subscriber')
-    rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage, requestLock)
+    rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage, callback)
     #rospy.Subscriber("camera_image",CompressedImage, callback)
-    rospy.on_shutdown(releaseLock)
     rospy.spin()
 
 
 if __name__=='__main__':
+    rospy.init_node('image_subscriber')
     video_filter()

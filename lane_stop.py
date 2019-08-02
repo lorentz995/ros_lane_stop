@@ -11,7 +11,6 @@ import traceback
 from motor_stop import *
 
 font = cv2.FONT_HERSHEY_COMPLEX
-pub = rospy.Publisher('lane_detection', Int32, queue_size=10)
 
 def frame_filter(imgMsg):
     global alt, id_node
@@ -68,7 +67,7 @@ def frame_filter(imgMsg):
                         except Exception:
                             traceback.print_exc()
 
-    cv2.imshow("Frame",frame)
+    #cv2.imshow("Frame",frame)
 
 def main_funcion():
     rospy.init_node('image_subscriber',anonymous=True)

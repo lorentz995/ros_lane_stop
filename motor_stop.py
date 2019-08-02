@@ -69,13 +69,10 @@ def stop():
         pub.publish(followmessage)
         stop_service(int(0))
         if one_time == False:
-            rel = threading.Timer(5.0, releaseLock)
+            rel = threading.Timer(5.0, video_filter)
             rel.start()
-            res = threading.Timer(4.5, Pedro)
-            res.start()
-            res = threading.Timer(5.0, shutdown)
-            res.start()
             one_time = True
+
 
     '''else:
         twistmessage.linear.x=80
@@ -89,15 +86,9 @@ def stop():
         pub.publish(followmessage)'''
 
 
-def Pedro():
+def reset():
     '''global conta_stop, one_time
     conta_stop = 0
     one_time = False'''
     video_filter()
-
-def shutdown():
-    '''global conta_stop, one_time
-    conta_stop = 0
-    one_time = False'''
-    rospy.signal_shutdown("Stop")
 

@@ -5,21 +5,27 @@ import traceback
 from master_node.msg import *
 from master_node.srv import *
 import threading
+from motor_stop import *
 
+lock = True
+jump = False
 id_node = "stop"
 positive_answ = 1
+
 
 twistmessage = Twist()
 followmessage = Follow()
 followmessage.id = id_node
-lock = False
-jump = False
 
 pub = rospy.Publisher('follow_topic', Follow, queue_size=1)
+
+
+
 request_lock_service = rospy.ServiceProxy('request_lock',RequestLockService)
 release_lock_service = rospy.ServiceProxy('release_lock',ReleaseLockService)
 
-def requestLock(dec):
+
+def requestCross(dec):
     global id_node, lock, jump
     if lock:
         cross(dec)
@@ -36,7 +42,7 @@ def requestLock(dec):
             checkMessage(msg_shared)
 
 
-def releaseLock():
+def releaseCross():
     global id_node, lock
     resp = release_lock_service(id_node)
     lock = False
@@ -53,21 +59,44 @@ def checkMessage(data):
         msg_shared = rospy.wait_for_message("/lock_shared", Lock)
         checkMessage(msg_shared)
 
+
 def turn_right():
+    print("turn right")
+    #rospy.init_node('ros_joy_controller', anonymous=True)
+    twistmessage.linear.x=0
+    twistmessage.linear.y=0
+    followmessage.twist = twistmessage
+    pub.publish(followmessage)
+    timer = threading.Timer(1.0, turn_right2)
+    timer.start()
+
+def turn_right2():
+    print("turn right")
     #rospy.init_node('ros_joy_controller', anonymous=True)
     twistmessage.linear.x=100
     twistmessage.linear.y=100
-    print(twistmessage)
     followmessage.twist = twistmessage
     pub.publish(followmessage)
     timer = threading.Timer(1.1, right_rotation)
     timer.start()
 
 def center():
+    print("center")
     #rospy.init_node('ros_joy_controller', anonymous=True)
     go_straight()
 
 def turn_left():
+    print("turn left")
+    #rospy.init_node('ros_joy_controller', anonymous=True)
+    twistmessage.linear.x=0
+    twistmessage.linear.y=0
+    followmessage.twist = twistmessage
+    pub.publish(followmessage)
+    timer = threading.Timer(1.0, turn_left2)
+    timer.start()
+
+def turn_left2():
+    print("turn left")
     #rospy.init_node('ros_joy_controller', anonymous=True)
     twistmessage.linear.x=100
     twistmessage.linear.y=100
@@ -77,6 +106,7 @@ def turn_left():
     timer.start()
 
 def right_rotation(): # Ruota il robot di 90 gradi a destra
+    print("right rotation")
     twistmessage = Twist()
     twistmessage.linear.x=80
     twistmessage.linear.y=-80
@@ -86,6 +116,7 @@ def right_rotation(): # Ruota il robot di 90 gradi a destra
     timer.start()
 
 def left_rotation(): # Ruota il robot di 90 gradi a sinistra
+    print("left rotation")
     twistmessage = Twist()
     twistmessage.linear.x=-100
     twistmessage.linear.y=100
@@ -94,13 +125,14 @@ def left_rotation(): # Ruota il robot di 90 gradi a sinistra
     timer = threading.Timer(0.70, go_straight)
     timer.start()
 
-def go_straight(): 
+def go_straight():
+    print("go straight")
     twistmessage.linear.x=100
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
     pub.publish(followmessage)
     print("Rilasciando l'ACK")
-    releaseLock()
+    releaseCross()
 
 def cross(dec):
     if dec == 'right':
