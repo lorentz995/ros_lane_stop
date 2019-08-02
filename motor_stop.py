@@ -5,6 +5,7 @@ import traceback
 from master_node.msg import *
 from master_node.srv import *
 import threading
+from led import *
 
 conta_stop = 0
 one_time = False
@@ -70,24 +71,33 @@ def stop():
         if one_time == False:
             rel = threading.Timer(5.0, releaseLock)
             rel.start()
-            res = threading.Timer(5.0, reset)
+            res = threading.Timer(4.5, Pedro)
             res.start()
-            #pedrito = threading.Timer(5.0, Pedro)
-            #pedrito.start()
+            res = threading.Timer(5.0, shutdown)
+            res.start()
             one_time = True
 
-    else:
+    '''else:
         twistmessage.linear.x=80
         twistmessage.linear.y=80
         followmessage.twist = twistmessage
         pub.publish(followmessage)
-        '''twistmessage.linear.x=0
+        releaseLock()
+        twistmessage.linear.x=0
         twistmessage.linear.y=0
         followmessage.twist = twistmessage
         pub.publish(followmessage)'''
 
 
-def reset():
-    global conta_stop, one_time
+def Pedro():
+    '''global conta_stop, one_time
     conta_stop = 0
-    one_time = False
+    one_time = False'''
+    video_filter()
+
+def shutdown():
+    '''global conta_stop, one_time
+    conta_stop = 0
+    one_time = False'''
+    rospy.signal_shutdown("Stop")
+

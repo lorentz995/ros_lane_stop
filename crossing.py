@@ -54,7 +54,7 @@ def checkMessage(data):
         checkMessage(msg_shared)
 
 def turn_right():
-    rospy.init_node('ros_joy_controller', anonymous=True)
+    #rospy.init_node('ros_joy_controller', anonymous=True)
     twistmessage.linear.x=100
     twistmessage.linear.y=100
     print(twistmessage)
@@ -64,11 +64,11 @@ def turn_right():
     timer.start()
 
 def center():
-    rospy.init_node('ros_joy_controller', anonymous=True)
+    #rospy.init_node('ros_joy_controller', anonymous=True)
     go_straight()
 
 def turn_left():
-    rospy.init_node('ros_joy_controller', anonymous=True)
+    #rospy.init_node('ros_joy_controller', anonymous=True)
     twistmessage.linear.x=100
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
@@ -121,4 +121,4 @@ def cross(dec):
         except rospy.ROSInterruptException:
             pass
 
-requestLock("left")
+
