@@ -67,11 +67,15 @@ def stop():
         print(twistmessage)
         followmessage.twist = twistmessage
         pub.publish(followmessage)
-        stop_service(int(0))
+        stop_service(0)
         if one_time == False:
-            rel = threading.Timer(5.0, video_filter)
+            #video_filter()
+            vid = threading.Timer(2.0, video_filter)
+            vid.start()
+            rel = threading.Timer(6.0, requestLock)
             rel.start()
             one_time = True
+
 
 
     '''else:

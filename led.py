@@ -18,55 +18,6 @@ contatore3 = 0
 contatore4 = 0
 stop = False
 
-'''id_node = "stop"
-positive_answ = 1
-
-twistmessage = Twist()
-followmessage = Follow()
-followmessage.id = id_node
-lock = False
-jump = False
-
-pub = rospy.Publisher('follow_topic', Follow, queue_size=1)
-request_lock_service = rospy.ServiceProxy('request_lock',RequestLockService)
-release_lock_service = rospy.ServiceProxy('release_lock',ReleaseLockService)
-
-def requestLock(data):
-    global id_node, lock, jump
-    if lock:
-        callback(data)
-    elif jump:
-        jump = False
-    else:
-        resp = request_lock_service(id_node)
-        print(resp)
-        if resp:
-            lock = True
-            callback(data)
-        else:
-            msg_shared = rospy.wait_for_message("/lock_shared", Lock)
-            checkMessage(msg_shared)
-
-
-def releaseLock():
-    global id_node, lock
-    resp = release_lock_service(id_node)
-    lock = False
-    print(resp)
-
-def checkMessage(data):
-    global id_node, lock
-    if data.id == id_node:
-        if data.msg == 1:
-            lock = True
-        else:
-            lock = False
-    else:
-        msg_shared = rospy.wait_for_message("/lock_shared", Lock)
-        checkMessage(msg_shared)
-        '''
-
-
 def callback(imgMsg):
     #rospy.loginfo()
     try:
@@ -163,7 +114,7 @@ def attraversamento(d, a, l_a):
             if contatore1 >= 70:
                 dir = randint(0,2)
                 if dir == 0:
-                    #decisione('right')
+                    requestCross('right')
                     print('dx occupata, giro a dx')
                     stop = True
                 else:
@@ -230,6 +181,12 @@ def attraversamento(d, a, l_a):
 
 
 def video_filter():
+    global contatore1, contatore2, contatore3, contatore4, stop
+    contatore1 = 0
+    contatore2 = 0
+    contatore3 = 0
+    contatore4 = 0
+    stop = False
     rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage, callback)
     #rospy.Subscriber("camera_image",CompressedImage, callback)
     rospy.spin()

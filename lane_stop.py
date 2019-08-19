@@ -67,7 +67,7 @@ def frame_filter(imgMsg):
                         except Exception:
                             traceback.print_exc()
 
-    #cv2.imshow("Frame",frame)
+    cv2.imshow("Frame",frame)
 
 def main_funcion():
     rospy.init_node('image_subscriber',anonymous=True)

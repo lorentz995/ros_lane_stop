@@ -19,11 +19,8 @@ followmessage.id = id_node
 
 pub = rospy.Publisher('follow_topic', Follow, queue_size=1)
 
-
-
 request_lock_service = rospy.ServiceProxy('request_lock',RequestLockService)
 release_lock_service = rospy.ServiceProxy('release_lock',ReleaseLockService)
-
 
 def requestCross(dec):
     global id_node, lock, jump
@@ -82,8 +79,21 @@ def turn_right2():
 
 def center():
     print("center")
+    twistmessage.linear.x=100
+    twistmessage.linear.y=100
+    followmessage.twist = twistmessage
+    pub.publish(followmessage)
+    timer = threading.Timer(1.0, center2)
+    timer.start()
     #rospy.init_node('ros_joy_controller', anonymous=True)
-    go_straight()
+
+def center2():
+    twistmessage.linear.x=100
+    twistmessage.linear.y=100
+    followmessage.twist = twistmessage
+    pub.publish(followmessage)
+    timer = threading.Timer(2.0,go_straight)
+    timer.start()
 
 def turn_left():
     print("turn left")
@@ -127,10 +137,6 @@ def left_rotation(): # Ruota il robot di 90 gradi a sinistra
 
 def go_straight():
     print("go straight")
-    twistmessage.linear.x=100
-    twistmessage.linear.y=100
-    followmessage.twist = twistmessage
-    pub.publish(followmessage)
     print("Rilasciando l'ACK")
     releaseCross()
 
