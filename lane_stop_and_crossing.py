@@ -13,7 +13,6 @@ import time
 
 font = cv2.FONT_HERSHEY_COMPLEX
 
-conta_stop = 0
 one_time = False
 id_node = "stop"
 positive_answ = 1
@@ -29,21 +28,27 @@ request_lock_service = rospy.ServiceProxy('request_lock',RequestLockService)
 release_lock_service = rospy.ServiceProxy('release_lock',ReleaseLockService)
 stop_service = rospy.ServiceProxy('stop',StopService)
 
+def reset():
+    global one_time
+    twistmessage.linear.x=0
+    twistmessage.linear.y=0
+    followmessage.twist = twistmessage
+    pub.publish(followmessage)
+    one_time = False
+    releaseLock()
+
 def stop():
-    global conta_stop, one_time
-    conta_stop += 1
-    if conta_stop < 40:
-        print("STOP")
+    global one_time
+    if not one_time:
         twistmessage.linear.x=0
         twistmessage.linear.y=0
         print(twistmessage)
         followmessage.twist = twistmessage
         pub.publish(followmessage)
         stop_service(0)
-        if one_time == False:
-            vid = threading.Timer(2.0, video_filter)
-            vid.start()
-            one_time = True
+        one_time = True
+        led = threading.Timer(2.0, led_filter)
+        led.start()
 
 def requestLock():
     global id_node, lock, jump
@@ -79,7 +84,8 @@ def checkMessage(data):
         checkMessage(msg_shared)
 
 def frame_filter(imgMsg):
-    global id_node
+    global id_node, one_time
+    print(one_time)
     bridge = CvBridge()
     frame = bridge.compressed_imgmsg_to_cv2(imgMsg, "bgr8")
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -153,6 +159,7 @@ def turn_right():
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
     pub.publish(followmessage)
+    time.sleep(1.0)
     twistmessage.linear.x=100
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
@@ -171,6 +178,7 @@ def go_straight():
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
     pub.publish(followmessage)
+    time.sleep(1.0)
     twistmessage.linear.x=100
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
@@ -184,6 +192,7 @@ def turn_left():
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
     pub.publish(followmessage)
+    time.sleep(1.0)
     twistmessage.linear.x=100
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
@@ -196,14 +205,3 @@ def turn_left():
     time.sleep(5.0)
     timer = threading.Timer(1.0, reset)
     timer.start()
-
-def reset():
-    global one_time
-    twistmessage.linear.x=0
-    twistmessage.linear.y=0
-    followmessage.twist = twistmessage
-    pub.publish(followmessage)
-    one_time = False
-    print("Rilasciando l'ACK")
-    print("Reset variabili per il prossimo incrocio")
-    releaseLock()

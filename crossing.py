@@ -38,7 +38,6 @@ def requestCross(dec):
             msg_shared = rospy.wait_for_message("/lock_shared", Lock)
             checkMessage(msg_shared)
 
-
 def releaseCross():
     global id_node, lock
     resp = release_lock_service(id_node)

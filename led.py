@@ -7,7 +7,7 @@ from sensor_msgs.msg import CompressedImage
 from cv_bridge import CvBridge, CvBridgeError
 import rospy, sys
 from random import randint
-from stop import *
+from lane_stop_and_crossing import *
 from master_node.msg import *
 from master_node.srv import *
 
@@ -179,7 +179,7 @@ def attraversamento(d, a, l_a):
                     stop = True
 
 
-def video_filter():
+def led_filter():
     global contatore1, contatore2, contatore3, contatore4, stop
     contatore1 = 0
     contatore2 = 0
@@ -194,4 +194,4 @@ def video_filter():
 
 if __name__=='__main__':
     rospy.init_node('image_subscriber')
-    video_filter()
+    led_filter()
