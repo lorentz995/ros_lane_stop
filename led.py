@@ -7,10 +7,9 @@ from sensor_msgs.msg import CompressedImage
 from cv_bridge import CvBridge, CvBridgeError
 import rospy, sys
 from random import randint
-from crossing import *
+from stop import *
 from master_node.msg import *
 from master_node.srv import *
-from motor_stop import *
 
 contatore1 = 0
 contatore2 = 0
@@ -114,7 +113,7 @@ def attraversamento(d, a, l_a):
             if contatore1 >= 70:
                 dir = randint(0,2)
                 if dir == 0:
-                    requestCross('right')
+                    turn_right()
                     print('dx occupata, giro a dx')
                     stop = True
                 else:
@@ -127,7 +126,7 @@ def attraversamento(d, a, l_a):
             if contatore2 >= 70:
                 dir = randint(0,2)
                 if dir == 0:
-                    requestCross('right')
+                    turn_right()
                     print('dx occupata e anteriore occupato con led spento, giro a dx')
                     stop = True
                 else:
@@ -142,17 +141,17 @@ def attraversamento(d, a, l_a):
             if contatore3 >= 70:
                 dir = randint(0,2)
                 if dir == 0:
-                    requestCross('right')
+                    turn_right()
                     print('anteriore occupato e led spento, giro a destra')
                     stop = True
 
                 if dir == 1:
-                    requestCross('center')
+                    go_straight()
                     print('anteriore occupato e led spento, vado dritto')
                     stop = True
 
                 if dir == 2:
-                    requestCross('left')
+                    turn_left()
                     print('anteriore occupato e led spento, giro a sx')
                     stop = True
 
@@ -165,17 +164,17 @@ def attraversamento(d, a, l_a):
                 dir = randint(0,2)
 
                 if dir == 0:
-                    requestCross('right')
+                    turn_right()
                     print('incrocio libero, giro a dx')
                     stop = True
 
                 if dir == 1:
-                    requestCross('center')
+                    go_straight()
                     print('incrocio libero, vado dritto')
                     stop = True
 
                 if dir == 2:
-                    requestCross('left')
+                    turn_left()
                     print('incrocio libero, vado a sx')
                     stop = True
 
@@ -187,6 +186,7 @@ def video_filter():
     contatore3 = 0
     contatore4 = 0
     stop = False
+    print("MANNAGGIADIO")
     rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage, callback)
     #rospy.Subscriber("camera_image",CompressedImage, callback)
     rospy.spin()

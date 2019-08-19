@@ -72,8 +72,8 @@ def stop():
             #video_filter()
             vid = threading.Timer(2.0, video_filter)
             vid.start()
-            rel = threading.Timer(6.0, requestLock)
-            rel.start()
+            #rel = threading.Timer(6.0, requestLock)
+            #rel.start()
             one_time = True
 
 

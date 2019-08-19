@@ -107,12 +107,12 @@ def turn_left():
 
 def turn_left2():
     print("turn left")
-    #rospy.init_node('ros_joy_controller', anonymous=True)
+
     twistmessage.linear.x=100
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
     pub.publish(followmessage)
-    timer = threading.Timer(2.5, left_rotation)
+    timer = threading.Timer(0.5, left_rotation)
     timer.start()
 
 def right_rotation(): # Ruota il robot di 90 gradi a destra
@@ -128,14 +128,18 @@ def right_rotation(): # Ruota il robot di 90 gradi a destra
 def left_rotation(): # Ruota il robot di 90 gradi a sinistra
     print("left rotation")
     twistmessage = Twist()
-    twistmessage.linear.x=-100
-    twistmessage.linear.y=100
+    twistmessage.linear.x=30
+    twistmessage.linear.y=80
     followmessage.twist = twistmessage
     pub.publish(followmessage)
-    timer = threading.Timer(0.70, go_straight)
+    timer = threading.Timer(5.0, go_straight)
     timer.start()
 
 def go_straight():
+    twistmessage.linear.x=0
+    twistmessage.linear.y=0
+    followmessage.twist = twistmessage
+    pub.publish(followmessage)
     print("go straight")
     print("Rilasciando l'ACK")
     releaseCross()
