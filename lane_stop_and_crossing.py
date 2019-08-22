@@ -5,7 +5,7 @@ from cv_bridge import CvBridge, CvBridgeError
 from master_node.msg import *
 from master_node.srv import *
 from geometry_msgs.msg import Twist
-from led import *
+from cross_checking import *
 import numpy as np
 import cv2
 import threading
@@ -13,7 +13,7 @@ import time
 
 font = cv2.FONT_HERSHEY_COMPLEX
 
-one_time = False
+onetime = False
 id_node = "stop"
 positive_answ = 1
 
@@ -29,26 +29,26 @@ release_lock_service = rospy.ServiceProxy('release_lock',ReleaseLockService)
 stop_service = rospy.ServiceProxy('stop',StopService)
 
 def reset():
-    global one_time
-    twistmessage.linear.x=0
-    twistmessage.linear.y=0
-    followmessage.twist = twistmessage
-    pub.publish(followmessage)
-    one_time = False
+    global onetime
+    onetime=False
     releaseLock()
 
+
 def stop():
-    global one_time
-    if not one_time:
+    #print("stop")
+    global onetime
+    if not onetime:
         twistmessage.linear.x=0
         twistmessage.linear.y=0
         print(twistmessage)
         followmessage.twist = twistmessage
         pub.publish(followmessage)
         stop_service(0)
-        one_time = True
-        led = threading.Timer(2.0, led_filter)
+        onetime=True
+        led = threading.Timer(1.0, led_filter)
         led.start()
+        one = threading.Timer(20.0, reset)
+        one.start()
 
 def requestLock():
     global id_node, lock, jump
@@ -84,8 +84,8 @@ def checkMessage(data):
         checkMessage(msg_shared)
 
 def frame_filter(imgMsg):
-    global id_node, one_time
-    print(one_time)
+    global id_node, onetime
+    #print(onetime)
     bridge = CvBridge()
     frame = bridge.compressed_imgmsg_to_cv2(imgMsg, "bgr8")
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -130,9 +130,10 @@ def frame_filter(imgMsg):
         if bestContour is not None:
             x,y,z,t = cv2.boundingRect(bestContour)
             cv2.rectangle(frame,(x,y),(x+z,y+t),(0,255,0),2)
+
             if y > 150:
                 if area > 4000:
-                    cv2.putText(frame, "STOP DETECTION",(x,y), font, 1, (0,0,255))
+                    cv2.putText(frame, "STOP DETECTED",(x,y), font, 1, (0,0,255))
                     if y > 240:
                         try:
                             requestLock() #segnale di stop
@@ -141,20 +142,7 @@ def frame_filter(imgMsg):
 
     cv2.imshow("Frame",frame)
 
-def main_funcion():
-    rospy.init_node('image_subscriber',anonymous=True)
-    rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage, frame_filter)
-    #rospy.Subscriber("/camera_image", CompressedImage, frame_filter)
-    #Release on shutdown
-    rospy.on_shutdown(releaseLock)
-    rospy.spin()
-
-if __name__=='__main__':
-    main_funcion()
-
-
 def turn_right():
-    print("Svoltando a destra")
     twistmessage.linear.x=100
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
@@ -169,25 +157,23 @@ def turn_right():
     twistmessage.linear.y=-80
     followmessage.twist = twistmessage
     pub.publish(followmessage)
-    timer = threading.Timer(0.65, reset)
-    timer.start()
+    #timer = threading.Timer(0.65, releaseLock)
+    #timer.start()
 
 def go_straight():
-    print("Proseguo dritto")
     twistmessage.linear.x=100
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
     pub.publish(followmessage)
     time.sleep(1.0)
-    twistmessage.linear.x=100
+    twistmessage.linear.x=90
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
     pub.publish(followmessage)
-    timer = threading.Timer(3.0, reset)
-    timer.start()
+    #timer = threading.Timer(3.0, releaseLock)
+    #timer.start()
 
 def turn_left():
-    print("turn left")
     twistmessage.linear.x=100
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
@@ -198,10 +184,21 @@ def turn_left():
     followmessage.twist = twistmessage
     pub.publish(followmessage)
     time.sleep(0.5)
-    twistmessage.linear.x=30
-    twistmessage.linear.y=80
+    twistmessage.linear.x=50
+    twistmessage.linear.y=90
     followmessage.twist = twistmessage
     pub.publish(followmessage)
     time.sleep(5.0)
-    timer = threading.Timer(1.0, reset)
-    timer.start()
+    #timer = threading.Timer(1.0, releaseLock)
+   # timer.start()
+
+def main_funcion():
+    rospy.init_node('image_subscriber',anonymous=True)
+    rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage, frame_filter)
+    #rospy.Subscriber("/camera_image", CompressedImage, frame_filter)
+    #Release on shutdown
+    #rospy.on_shutdown(releaseLock)
+    rospy.spin()
+
+if __name__=='__main__':
+    main_funcion()
