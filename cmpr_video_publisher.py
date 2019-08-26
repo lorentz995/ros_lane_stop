@@ -12,7 +12,7 @@ def image_publisher():
     bridge = CvBridge() #inizializza la classe CvBridge
     #Avvia fotocamera
     cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FPS, 10) #Setta la fotocamera a 10 fps
+    cap.set(cv2.CAP_PROP_FPS, 2) #Setta la fotocamera a 10 fps
     print("Avvio Webcam riuscito. CRTL + C per uscire")
     #rval, frame = cap.read()
 
