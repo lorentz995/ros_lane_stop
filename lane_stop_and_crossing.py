@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 import rospy,sys,cv2,numpy,roslib
 from sensor_msgs.msg import CompressedImage
+from std_msgs.msg import Int32
 from cv_bridge import CvBridge, CvBridgeError
 from master_node.msg import *
 from master_node.srv import *
 from geometry_msgs.msg import Twist
-from cross_checking import *
 import numpy as np
-import cv2
-import threading
-import time
+import cv2, time, threading
+
 
 font = cv2.FONT_HERSHEY_COMPLEX
 
@@ -24,18 +23,13 @@ lock = False
 jump = False
 
 pub = rospy.Publisher('follow_topic', Follow, queue_size=1)
+talker = rospy.Publisher("check",Int32,queue_size = 1)
 request_lock_service = rospy.ServiceProxy('request_lock',RequestLockService)
 release_lock_service = rospy.ServiceProxy('release_lock',ReleaseLockService)
 stop_service = rospy.ServiceProxy('stop',StopService)
 
-def reset():
-    global onetime
-    onetime=False
-    releaseLock()
-
 
 def stop():
-    #print("stop")
     global onetime
     if not onetime:
         twistmessage.linear.x=0
@@ -45,10 +39,8 @@ def stop():
         pub.publish(followmessage)
         stop_service(0)
         onetime=True
-        led = threading.Timer(1.0, led_filter)
-        led.start()
-        one = threading.Timer(20.0, reset)
-        one.start()
+        time.sleep(2.0)
+        talker.publish(1)
 
 def requestLock():
     global id_node, lock, jump
@@ -67,9 +59,10 @@ def requestLock():
             checkMessage(msg_shared)
 
 def releaseLock():
-    global id_node, lock
+    global id_node, lock, onetime
     resp = release_lock_service(id_node)
     lock = False
+    onetime = False
     print(resp)
 
 def checkMessage(data):
@@ -83,11 +76,10 @@ def checkMessage(data):
         msg_shared = rospy.wait_for_message("/lock_shared", Lock)
         checkMessage(msg_shared)
 
-def frame_filter(imgMsg):
-    global id_node, onetime
-    #print(onetime)
+def frame_filter(imgmsg):
+    global id_node
     bridge = CvBridge()
-    frame = bridge.compressed_imgmsg_to_cv2(imgMsg, "bgr8")
+    frame = bridge.compressed_imgmsg_to_cv2(imgmsg, "bgr8")
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     cv2.waitKey(1)
     #Apply a red mask for stop detection
@@ -142,6 +134,22 @@ def frame_filter(imgMsg):
 
     cv2.imshow("Frame",frame)
 
+def decision(data):
+    dec = data.data
+    if dec == 10:
+        talker.publish(0)
+        turn_right()
+    elif dec == 11:
+        talker.publish(0)
+        go_straight()
+    elif dec == 12:
+        talker.publish(0)
+        turn_left()
+    else:
+        print("Se leggi questo messaggio, preoccupati")
+
+
+
 def turn_right():
     twistmessage.linear.x=100
     twistmessage.linear.y=100
@@ -157,8 +165,8 @@ def turn_right():
     twistmessage.linear.y=-80
     followmessage.twist = twistmessage
     pub.publish(followmessage)
-    #timer = threading.Timer(0.65, releaseLock)
-    #timer.start()
+    timer = threading.Timer(0.65, releaseLock)
+    timer.start()
 
 def go_straight():
     twistmessage.linear.x=100
@@ -170,8 +178,8 @@ def go_straight():
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
     pub.publish(followmessage)
-    #timer = threading.Timer(3.0, releaseLock)
-    #timer.start()
+    timer = threading.Timer(3.0, releaseLock)
+    timer.start()
 
 def turn_left():
     twistmessage.linear.x=100
@@ -189,13 +197,13 @@ def turn_left():
     followmessage.twist = twistmessage
     pub.publish(followmessage)
     time.sleep(5.0)
-    #timer = threading.Timer(1.0, releaseLock)
-   # timer.start()
+    timer = threading.Timer(1.0, releaseLock)
+    timer.start()
 
 def main_funcion():
     rospy.init_node('image_subscriber',anonymous=True)
     rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage, frame_filter)
-    #rospy.Subscriber("/camera_image", CompressedImage, frame_filter)
+    rospy.Subscriber("/svolta", Int32, decision)
     #Release on shutdown
     #rospy.on_shutdown(releaseLock)
     rospy.spin()
