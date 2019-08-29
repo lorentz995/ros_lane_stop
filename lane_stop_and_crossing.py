@@ -169,6 +169,7 @@ def turn_right():
     timer.start()
 
 def go_straight():
+    led.publish(1)
     twistmessage.linear.x=100
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
@@ -182,6 +183,7 @@ def go_straight():
     timer.start()
 
 def turn_left():
+    led.publish(1)
     twistmessage.linear.x=100
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
