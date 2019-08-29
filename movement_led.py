@@ -1,6 +1,6 @@
 import RPi.GPIO as GPIO
 from time import sleep
-import rospy,sys,cv2,roslib, time, threading
+import rospy,roslib
 from std_msgs.msg import Int32
 
 GPIO.setwarnings(False) # Ignore warning for now
