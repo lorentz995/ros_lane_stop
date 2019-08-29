@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import rospy,sys,cv2,numpy,roslib
+import rospy,sys,cv2,roslib, time, threading
 from sensor_msgs.msg import CompressedImage
 from std_msgs.msg import Int32
 from cv_bridge import CvBridge, CvBridgeError
@@ -7,8 +7,6 @@ from master_node.msg import *
 from master_node.srv import *
 from geometry_msgs.msg import Twist
 import numpy as np
-import cv2, time, threading
-
 
 font = cv2.FONT_HERSHEY_COMPLEX
 
@@ -24,23 +22,23 @@ jump = False
 
 pub = rospy.Publisher('follow_topic', Follow, queue_size=1)
 talker = rospy.Publisher("check",Int32,queue_size = 1)
+led = rospy.Publisher("led",Int32,queue_size = 1)
 request_lock_service = rospy.ServiceProxy('request_lock',RequestLockService)
 release_lock_service = rospy.ServiceProxy('release_lock',ReleaseLockService)
 stop_service = rospy.ServiceProxy('stop',StopService)
 
 
 def stop():
-    global onetime
+    global onetime #used for repeat this function one time for each crossroad
     if not onetime:
-        twistmessage.linear.x=0
+        twistmessage.linear.x=0 #set motorspeed to 0
         twistmessage.linear.y=0
         print(twistmessage)
         followmessage.twist = twistmessage
         pub.publish(followmessage)
-        stop_service(0)
+        stop_service(0) #keep motor to 0
         onetime=True
-        time.sleep(2.0)
-        talker.publish(1)
+        talker.publish(1) #signal to enable program "check_crossroad.py"
 
 def requestLock():
     global id_node, lock, jump
@@ -107,20 +105,21 @@ def frame_filter(imgmsg):
     #for filter image
     kernel = np.ones((5,5), np.uint8)
     mask = cv2.erode(mask,kernel)
+
     #cv2.imshow("Mask",mask) #uncomment for view the mask filtering
     cv2.waitKey(1)
-    _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE) #find contours on binary mask
     maxArea = 0
     bestContour = None
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        approx = cv2.approxPolyDP(cnt, 0.01*cv2.arcLength(cnt, True), True)
-        if area > maxArea: #Calculate max rectangular
+        approx = cv2.approxPolyDP(cnt, 0.01*cv2.arcLength(cnt, True), True) #roximatising polygonal curves
+        if area > maxArea: #Calculate max rectangular and best contour
             bestContour = approx
             maxArea = area
         cv2.drawContours(frame, [approx], 0, (0,0,255),1)
         if bestContour is not None:
-            x,y,z,t = cv2.boundingRect(bestContour)
+            x,y,z,t = cv2.boundingRect(bestContour) #build rectangles on best contour
             cv2.rectangle(frame,(x,y),(x+z,y+t),(0,255,0),2)
 
             if y > 150:
@@ -128,7 +127,7 @@ def frame_filter(imgmsg):
                     cv2.putText(frame, "STOP DETECTED",(x,y), font, 1, (0,0,255))
                     if y > 240:
                         try:
-                            requestLock() #segnale di stop
+                            requestLock() #stop procedure
                         except Exception:
                             pass
 
@@ -146,11 +145,12 @@ def decision(data):
         talker.publish(0)
         turn_left()
     else:
-        print("Se leggi questo messaggio, preoccupati")
+        print("Se leggi questo messaggio, puoi bestemmiare al tuo amico che ti passa questo tipo di dato")
 
 
 
 def turn_right():
+    led.publish(1)
     twistmessage.linear.x=100
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
@@ -161,11 +161,11 @@ def turn_right():
     followmessage.twist = twistmessage
     pub.publish(followmessage)
     time.sleep(1.1)
-    twistmessage.linear.x=80
-    twistmessage.linear.y=-80
+    twistmessage.linear.x=110
+    twistmessage.linear.y=0
     followmessage.twist = twistmessage
     pub.publish(followmessage)
-    timer = threading.Timer(0.65, releaseLock)
+    timer = threading.Timer(1.5, releaseLock)
     timer.start()
 
 def go_straight():
@@ -200,7 +200,7 @@ def turn_left():
     timer = threading.Timer(1.0, releaseLock)
     timer.start()
 
-def main_funcion():
+def main_function():
     rospy.init_node('image_subscriber',anonymous=True)
     rospy.Subscriber("/raspicam_node/image/compressed",CompressedImage, frame_filter)
     rospy.Subscriber("/svolta", Int32, decision)
@@ -209,4 +209,4 @@ def main_funcion():
     rospy.spin()
 
 if __name__=='__main__':
-    main_funcion()
+    main_function()

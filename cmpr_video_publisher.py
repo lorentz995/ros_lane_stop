@@ -32,11 +32,3 @@ def image_publisher():
         #if key == 27 or key == 1048603:
             #break
     #cv2.destroyWindow("preview")
-
-
-if __name__ == '__main__':
-    try:
-        image_publisher()
-
-    except rospy.ROSInterruptException:
-        pass
