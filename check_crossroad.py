@@ -57,7 +57,7 @@ def detection(frame):
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     hsv1 = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     blurred = cv2.GaussianBlur(hsv, (11, 11), 0)
-    ret,mask = cv2.threshold(blurred,150,250,cv2.THRESH_TOZERO)
+    ret,mask = cv2.threshold(blurred,200,250,cv2.THRESH_TOZERO)
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=4)
 
@@ -68,19 +68,23 @@ def detection(frame):
     lower_yellow = np.array([0,100,100])
     upper_yellow = np.array([40,255,255])
     mask2 = cv2.inRange(hsv1, lower_yellow, upper_yellow)
+    mask2 = cv2.erode(mask2, None, iterations=2)
+    mask2 = cv2.dilate(mask2, None, iterations=4)
 
-    lower_blue = np.array([26,77,48])
-    upper_blue = np.array([141,255,255])
-    mask3 = cv2.inRange(hsv1, lower_blue, upper_blue)
+    #lower_blue = np.array([26,77,48])
+    #upper_blue = np.array([141,255,255])
+    #mask3 = cv2.inRange(hsv1, lower_blue, upper_blue)
+    mask = cv2.erode(mask, None, iterations=2)
+    mask = cv2.dilate(mask, None, iterations=4)
 
     _, contours1, hierarchy1 = cv2.findContours(mask1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-   #se vedo il marker rosso non posso svoltare a destra
+   #se vedo il marker quadrato rosso non posso svoltare a destra
     for contour1 in contours1:
         currentArea1 = cv2.contourArea(contour1)
         approx1 = cv2.approxPolyDP(contour1, 0.01*cv2.arcLength(contour1, True), True)
         (x,y),radius = cv2.minEnclosingCircle(contour1)
         center = (int(x),int(y))
-        if currentArea1 < 300:
+        if 100 < currentArea1 < 300:
             if 30 < x < 80 and 45 < y < 100:
                 cv2.drawContours(frame, [approx1], 0, (0,255,0), 2)
                 if direction == False:
@@ -103,14 +107,14 @@ def detection(frame):
                     dir = randint(0,1)
                     direction = True
 
-    _, contours3, hierarchy3 = cv2.findContours(mask3, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    #se vedo il marker blu non posso andare dritto
+    _, contours3, hierarchy3 = cv2.findContours(mask1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    #se vedo il marker triangolare rosso non posso andare dritto
     for contour3 in contours3:
         currentArea3 = cv2.contourArea(contour3)
         approx3 = cv2.approxPolyDP(contour3, 0.01*cv2.arcLength(contour3, True), True)
         (x,y),radius = cv2.minEnclosingCircle(contour3)
         center = (int(x),int(y))
-        if currentArea3 < 300:
+        if currentArea3 < 100:
             if 30 < x < 80 and 45 < y < 100:
                 cv2.drawContours(frame, [approx3], 0, (0,255,0), 2)
                 if direction == False:
@@ -152,9 +156,10 @@ def detection(frame):
 
     check(led_a, led_d)
 
-    cv2.imshow('frame', frame)
-    cv2.imshow('mask1 led', mask)
-    #cv2.imshow('mask2 led', mask2)
+    cv2.imshow('Frame originale', frame)
+    cv2.imshow('Led', mask)
+    cv2.imshow('Red', mask1)
+    #cv2.imshow('Yellow', mask2)
     cv2.waitKey(1)
 
 #In base allo stato dell'incrocio restituisce la decisione su come attraversarlo

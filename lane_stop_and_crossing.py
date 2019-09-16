@@ -22,7 +22,7 @@ jump = False
 
 pub = rospy.Publisher('follow_topic', Follow, queue_size=1)
 talker = rospy.Publisher("check",Int32,queue_size = 1)
-led = rospy.Publisher("led",Int32,queue_size = 1)
+#led = rospy.Publisher("led",Int32,queue_size = 1)
 request_lock_service = rospy.ServiceProxy('request_lock',RequestLockService)
 release_lock_service = rospy.ServiceProxy('release_lock',ReleaseLockService)
 stop_service = rospy.ServiceProxy('stop',StopService)
@@ -131,7 +131,7 @@ def frame_filter(imgmsg):
                         except Exception:
                             pass
 
-    cv2.imshow("Frame",frame)
+    cv2.imshow("Rilevazione linea di stop",frame)
 
 def decision(data):
     dec = data.data
@@ -150,7 +150,6 @@ def decision(data):
 
 
 def turn_right():
-    led.publish(1)
     twistmessage.linear.x=100
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
@@ -161,7 +160,7 @@ def turn_right():
     followmessage.twist = twistmessage
     pub.publish(followmessage)
     time.sleep(1.1)
-    twistmessage.linear.x=110
+    twistmessage.linear.x=120
     twistmessage.linear.y=0
     followmessage.twist = twistmessage
     pub.publish(followmessage)
@@ -169,7 +168,6 @@ def turn_right():
     timer.start()
 
 def go_straight():
-    led.publish(1)
     twistmessage.linear.x=100
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
@@ -183,7 +181,6 @@ def go_straight():
     timer.start()
 
 def turn_left():
-    led.publish(1)
     twistmessage.linear.x=100
     twistmessage.linear.y=100
     followmessage.twist = twistmessage
@@ -194,7 +191,7 @@ def turn_left():
     followmessage.twist = twistmessage
     pub.publish(followmessage)
     time.sleep(0.5)
-    twistmessage.linear.x=50
+    twistmessage.linear.x=48
     twistmessage.linear.y=90
     followmessage.twist = twistmessage
     pub.publish(followmessage)
