@@ -14,7 +14,7 @@ contatore2 = 0
 contatore3 = 0
 contatore4 = 0
 stop = False
-via = False
+via = True
 direction = False
 svolta = rospy.Publisher("svolta",Int32,queue_size=1)
 l = False
@@ -57,7 +57,7 @@ def detection(frame):
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     hsv1 = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     blurred = cv2.GaussianBlur(hsv, (11, 11), 0)
-    ret,mask = cv2.threshold(blurred,200,250,cv2.THRESH_TOZERO)
+    ret,mask = cv2.threshold(blurred,200,250,cv2.THRESH_TOZERO) #Soglia di decisione per la led detection
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=4)
 
@@ -136,7 +136,7 @@ def detection(frame):
         if dir == 2:
             print('voglio svoltare a sinistra')
             l = True
-
+#Questa parte serve per fre la detection dei led
     _, contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     for contour in contours:
         currentArea = cv2.contourArea(contour)
